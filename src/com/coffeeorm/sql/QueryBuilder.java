@@ -1,5 +1,7 @@
 package com.coffeeorm.sql;
 
+import com.coffeeorm.util.Db;
+
 import static com.coffeeorm.util.Debug.log;
 
 import java.sql.Connection;
@@ -26,11 +28,16 @@ public class QueryBuilder {
 
     protected String // Active record
             _db_prefix = "",
-            _select = "*", _group_by = "", _order_by = "", _limit = "",
-    // Database Configuration
-    _host = "localhost", _port = "3306",
+            _select = "*",
+            _group_by = "",
+            _order_by = "",
+            _limit = "",
+            // Database Configuration
+            _host = "localhost",
+            _port = "3306",
             _database = null,
-            _user = "root", _pass = "";
+            _user = "root",
+            _pass = "";
 
     protected String _table;
 
@@ -169,8 +176,7 @@ public class QueryBuilder {
      * @return String
      */
     protected static String escape(String value) {
-        // TODO: clean
-        return value;
+        return Db.escape(value);
     }
 
     /**

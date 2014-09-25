@@ -5,6 +5,8 @@ import com.coffeeorm.exceptions.OrmEntityException;
 import com.coffeeorm.exceptions.OrmSaveException;
 import com.coffeeorm.orm.CoffeeORM;
 import com.coffeeorm.sql.DBConnection;
+import test.Client;
+import test.Vehicle;
 
 import static com.coffeeorm.util.Debug.log;
 import static com.coffeeorm.util.Db.escape;
@@ -18,21 +20,25 @@ public class MainTest {
 
         log("Starting application.");
 
-        DBConnection.getInstance();
+        CoffeeORM coffeeORM = CoffeeORM.getInstance();
+
+        Client client = new Client();
+
+        client.name = "CoffeeORM";
+        client.email = "una@vaina.bien";
+        client.telephone = "+1 809-239-0076";
+        client.comment = "Generated from CoffeeORM";
+
+        try {
+
+            coffeeORM.save(client);
+
+        } catch (OrmSaveException e) {
+            e.printStackTrace();
+        } catch (OrmEntityException e) {
+            e.printStackTrace();
+        }
 
     }
-
 }
 
-@Entity
-class Vehicle {
-
-    @TableField(AutoIncrement = true, Index = TableField.Index.PRIMARY)
-    public int id;
-
-    @TableField
-    public String brand;
-
-    @TableField(Type = TableField.FieldType.INTEGER)
-    public int year;
-}

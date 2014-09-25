@@ -92,7 +92,7 @@ public class ActiveRecord extends QueryBuilder {
      *
      * @param column
      * @param value
-     * @param match   | L, R, [default B]: %Left, Right% OR %Both%
+     * @param match  | L, R, [default B]: %Left, Right% OR %Both%
      * @return
      */
     public ActiveRecord like(String column, String value, String match) {
@@ -251,7 +251,7 @@ public class ActiveRecord extends QueryBuilder {
      * @param table
      * @return
      */
-	/*
+    /*
 	 * public int get_count(Class<Serializable> table) { List result =
 	 * this.get(table); if (result != null) { return result.size(); } return 0;
 	 * }

@@ -7,12 +7,13 @@ import java.io.FileInputStream;
 /**
  * Created by wrivas on 9/24/14.
  */
-class Config extends Properties {
+public class Config extends Properties {
 
     public static final String DEBUG = "debug";
     public static final String DB_HOST = "db_host";
+    public static final String DB_PORT = "db_port";
     public static final String DB_NAME = "db_name";
-    public static final String DB_USER = "db_host";
+    public static final String DB_USER = "db_user";
     public static final String DB_PASS = "db_pass";
 
     private static Config instance = null;
