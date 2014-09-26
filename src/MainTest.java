@@ -30,9 +30,7 @@ public class MainTest {
         client.comment = "Generated from CoffeeORM";
 
         try {
-
             coffeeORM.save(client);
-
         } catch (OrmSaveException e) {
             e.printStackTrace();
         } catch (OrmEntityException e) {
