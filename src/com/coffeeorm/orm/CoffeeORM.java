@@ -2,14 +2,13 @@ package com.coffeeorm.orm;
 
 import com.coffeeorm.annotations.Entity;
 import com.coffeeorm.annotations.TableField;
+import com.coffeeorm.exceptions.EntityNotPrimaryKeyException;
+import com.coffeeorm.exceptions.InvalidEntityException;
 import com.coffeeorm.exceptions.OrmSaveException;
 import com.coffeeorm.exceptions.OrmDeleteException;
-import com.coffeeorm.exceptions.OrmEntityException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
 
 import com.coffeeorm.reflectcache.EntityCache;
 import com.coffeeorm.sql.DBConnection;
@@ -47,58 +46,72 @@ public class CoffeeORM {
      * @param entity
      * @return
      */
-    private boolean isValidEntity(Object entity) {
+    private void checkValidEntity(Object entity) throws InvalidEntityException {
         Class entityClass = entity.getClass();
         // TODO verify if is a public class
-        return entityClass.getAnnotation(Entity.class) != null;
+        if(entityClass.getAnnotation(Entity.class) == null)
+            throw new InvalidEntityException("Entity invalid.");
+
+        // TODO verify that have a primary key
+        if(true)
+            throw new InvalidEntityException("The entity specified does not have Primary Key defined.");
     }
 
-    public void save(Object entity) throws OrmSaveException, OrmEntityException {
-        if (!isValidEntity(entity)) throw new OrmEntityException("Invalid entity");
+    public void save(Object entity, String primaryKey) throws OrmSaveException, InvalidEntityException {
+        checkValidEntity(entity);
 
-        // TODO check for insert or update
-        insert(entity);
-
-        log("Entity saved successfully");
-    }
-
-    private boolean insert(Object entity) throws OrmSaveException, OrmEntityException {
         String tableName = getTableName(entity);
         ArrayList<Field> fields = getFieldsAndValues(entity);
 
-        String SQL = "INSERT INTO `" + tableName + "`(%s) VALUES(%s)",
-               columns = "",
-               values = "";
+        // TODO verified if is updating.
+        boolean isUpdate = true;
+
+        String SQL = isUpdate ? "UPDATE `" + tableName + "` SET %s WHERE %s"
+                : "INSERT INTO `" + tableName + "`(%s) VALUES(%s)";
+
+        String sqlStrLeft = "", sqlStrRight = "";
 
         // If Primary Autoincrement field is found,
         // then mark to modify after inserted into the entity instance.
         String autoIncrement = null;
 
-        for(Field field : fields) {
-            if(!field.tableField.AutoIncrement()) {
-                columns += "`" + field.name + "`,";
-                values += (field.value == null ?
+        for (Field field : fields) {
+            if (!field.tableField.AutoIncrement()) {
+                if (isUpdate) {
+                    sqlStrLeft += "`" + field.name + "` = " +
+                                  (field.value == null ?
+                                   "NULL," : "'" + Db.escape(field.value) + "',");
+                } else {
+                    sqlStrLeft += "`" + field.name + "`,";
+                    sqlStrRight += (field.value == null ?
                             "NULL," : "'" + Db.escape(field.value) + "',");
+                }
             }
-            if( field.tableField.AutoIncrement() &&
-                field.tableField.Index() == TableField.Index.PRIMARY ) {
+            if (!isUpdate && (field.tableField.AutoIncrement() &&
+                    field.tableField.Index() == TableField.Index.PRIMARY)) {
                 autoIncrement = field.name;
             }
+            if (isUpdate && field.tableField.Index() == TableField.Index.PRIMARY) {
+                sqlStrRight = "`" + field.name + "` = '" + Db.escape(field.value) + "',";
+            }
         }
-        // Format SQL with columns and values, removing last comma (,)
-        SQL = String.format(SQL, columns.substring(0, columns.length() - 1), values.substring(0, values.length() - 1));
+        // Removing last comma (,)
+        sqlStrLeft = sqlStrLeft.substring(0, sqlStrLeft.length() - 1);
 
+        sqlStrRight = sqlStrRight.substring(0, sqlStrRight.length() - 1);
+
+        // Format SQL with columns and values
+        SQL = String.format(SQL, sqlStrLeft, sqlStrRight);
         try {
             dbConnection.getStatement().executeUpdate(SQL);
             log(String.format("Query executed: \"%s\"", SQL));
-            if(autoIncrement != null) {
+            if (autoIncrement != null) {
                 // TODO assign new id generated.
             }
         } catch (SQLException e) {
-            log("Error :: " + e.getMessage(),true);
-            return false;
+            throw new OrmSaveException(e.getMessage());
         }
-        return true;
+
     }
 
     private String getTableName(Object entity) {
@@ -127,6 +140,10 @@ public class CoffeeORM {
         return fields;
     }
 
+	public void delete(Object entity) throws OrmDeleteException, InvalidEntityException {
+        checkValidEntity(entity);
+	}
+
     /**
      * Get primary key field name.
      * @param entity
@@ -145,9 +162,6 @@ public class CoffeeORM {
         }
         return null;
     }
-
-    public void delete(Object entity) throws OrmDeleteException, OrmEntityException {
-        if (!isValidEntity(entity)) throw new OrmEntityException("Invalid entity");
 
     }
 
