@@ -1,6 +1,7 @@
 
 import com.coffeeorm.annotations.Entity;
 import com.coffeeorm.annotations.TableField;
+import com.coffeeorm.exceptions.InvalidEntityException;
 import com.coffeeorm.exceptions.OrmEntityException;
 import com.coffeeorm.exceptions.OrmSaveException;
 import com.coffeeorm.orm.CoffeeORM;
@@ -34,7 +35,7 @@ public class MainTest {
              coffeeORM.save(client);
         } catch (OrmSaveException e) {
             e.printStackTrace();
-        } catch (OrmEntityException e) {
+        } catch (InvalidEntityException e) {
             e.printStackTrace();
         }
 

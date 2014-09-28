@@ -2,7 +2,6 @@ package com.coffeeorm.orm;
 
 import com.coffeeorm.annotations.Entity;
 import com.coffeeorm.annotations.TableField;
-import com.coffeeorm.exceptions.EntityNotPrimaryKeyException;
 import com.coffeeorm.exceptions.InvalidEntityException;
 import com.coffeeorm.exceptions.OrmSaveException;
 import com.coffeeorm.exceptions.OrmDeleteException;
@@ -57,7 +56,7 @@ public class CoffeeORM {
             throw new InvalidEntityException("The entity specified does not have Primary Key defined.");
     }
 
-    public void save(Object entity, String primaryKey) throws OrmSaveException, InvalidEntityException {
+    public void save(Object entity) throws OrmSaveException, InvalidEntityException {
         checkValidEntity(entity);
 
         String tableName = getTableName(entity);
@@ -140,9 +139,10 @@ public class CoffeeORM {
         return fields;
     }
 
-	public void delete(Object entity) throws OrmDeleteException, InvalidEntityException {
+    public void delete(Object entity) throws OrmDeleteException, InvalidEntityException {
         checkValidEntity(entity);
-	}
+
+    }
 
     /**
      * Get primary key field name.
@@ -161,8 +161,6 @@ public class CoffeeORM {
             }
         }
         return null;
-    }
-
     }
 
     public static Class getFirstBy(Object entity, String field, String value) {
