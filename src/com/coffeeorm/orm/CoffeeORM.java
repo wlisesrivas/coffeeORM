@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.coffeeorm.reflectcache.EntityCache;
 import com.coffeeorm.sql.DBConnection;
 import com.coffeeorm.util.Db;
 
@@ -20,6 +21,7 @@ import static com.coffeeorm.util.Debug.log;
  * Created by wrivas on 9/24/14.
  */
 public class CoffeeORM {
+    private EntityCache entityCache;
     private static CoffeeORM instance = null;
     private static DBConnection dbConnection = null;
 
@@ -36,7 +38,7 @@ public class CoffeeORM {
 
     public CoffeeORM() {
         dbConnection = DBConnection.getInstance();
-
+        entityCache = EntityCache.getInstance();
     }
 
     /**
@@ -123,6 +125,25 @@ public class CoffeeORM {
             }
         }
         return fields;
+    }
+
+    /**
+     * Get primary key field name.
+     * @param entity
+     * @return String
+     */
+    private String getFieldPrimary(Object entity) {
+        String fieldFromCache = entityCache.getEntityPrimaryKey(entity);
+        if( fieldFromCache != null )
+            return fieldFromCache;
+        for (java.lang.reflect.Field field : entity.getClass().getFields()) {
+            TableField tableField = (TableField) field.getAnnotation(TableField.class);
+            if (tableField != null && tableField.Index() == TableField.Index.PRIMARY ) {
+                entityCache.setEntityPrimaryKey(entity, field.getName());
+                return field.getName();
+            }
+        }
+        return null;
     }
 
     public void delete(Object entity) throws OrmDeleteException, OrmEntityException {
