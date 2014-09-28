@@ -2,7 +2,6 @@
 import com.coffeeorm.annotations.Entity;
 import com.coffeeorm.annotations.TableField;
 import com.coffeeorm.exceptions.InvalidEntityException;
-import com.coffeeorm.exceptions.OrmEntityException;
 import com.coffeeorm.exceptions.OrmSaveException;
 import com.coffeeorm.orm.CoffeeORM;
 import com.coffeeorm.sql.DBConnection;
@@ -25,9 +24,10 @@ public class MainTest {
 
         Client client = new Client();
 
-        client.name = "CoffeeORM";
+        client.name = "CoffeeORM Actualizado";
         client.email = "una@vaina.bien";
         client.is_active = 1;
+        client.id = 16;
         client.telephone = "+1 809-239-0076";
         client.comment = "Generated from CoffeeORM";
 

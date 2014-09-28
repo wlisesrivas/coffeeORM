@@ -52,7 +52,7 @@ public class CoffeeORM {
             throw new InvalidEntityException("Entity invalid.");
 
         // TODO verify that have a primary key
-        if(true)
+        if(getFieldPrimary(entity) == null)
             throw new InvalidEntityException("The entity specified does not have Primary Key defined.");
     }
 
@@ -62,8 +62,15 @@ public class CoffeeORM {
         String tableName = getTableName(entity);
         ArrayList<Field> fields = getFieldsAndValues(entity);
 
-        // TODO verified if is updating.
-        boolean isUpdate = true;
+        // Verified if is updating a record.
+        boolean isUpdate = false;
+        String fieldPrimary = getFieldPrimary(entity);
+        for (Field field : fields) {
+            if ( field.name == fieldPrimary && !(field.value.equals(String.valueOf("0")) || field.value == "") ) {
+                isUpdate = true;
+                break;
+            }
+        }
 
         String SQL = isUpdate ? "UPDATE `" + tableName + "` SET %s WHERE %s"
                 : "INSERT INTO `" + tableName + "`(%s) VALUES(%s)";
