@@ -24,20 +24,22 @@ public class MainTest {
 
         Client client = new Client();
 
-        client.name = "CoffeeORM Actualizado";
+        client.name = "CoffeeORM";
         client.email = "una@vaina.bien";
         client.is_active = 1;
-        client.id = 16;
+//        client.id = 16;
         client.telephone = "+1 809-239-0076";
         client.comment = "Generated from CoffeeORM";
 
-        try {
-             coffeeORM.save(client);
-        } catch (OrmSaveException e) {
-            e.printStackTrace();
-        } catch (InvalidEntityException e) {
-            e.printStackTrace();
-        }
+        coffeeORM.getFirstBy(client, "15");
+        client.toString();
+//        try {
+//             coffeeORM.save(client);
+//        } catch (OrmSaveException e) {
+//            e.printStackTrace();
+//        } catch (InvalidEntityException e) {
+//            e.printStackTrace();
+//        }
 
     }
 }
