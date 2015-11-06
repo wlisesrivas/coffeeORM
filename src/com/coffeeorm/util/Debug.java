@@ -10,7 +10,7 @@ public class Debug {
 
     private static boolean enabled = true;
 
-    private static String Prefix = "CoffieeORM";
+    private static String Prefix = "CoffeeORM";
 
     private static SimpleDateFormat dateFormat;
 
@@ -47,7 +47,7 @@ public class Debug {
      * @param obj
      */
     public static void log(Object obj) {
-        Debug.log(obj, false);
+        Debug.log(obj != null ? obj : "NULL", false);
     }
 
     public static void Enabled() {enabled = true;}

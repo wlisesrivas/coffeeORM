@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import com.coffeeorm.reflectcache.EntityCache;
+import com.coffeeorm.sql.ActiveRecord;
 import com.coffeeorm.sql.DBConnection;
 import com.coffeeorm.util.Db;
 
@@ -20,9 +21,11 @@ import static com.coffeeorm.util.Debug.log;
  * Created by wrivas on 9/24/14.
  */
 public class CoffeeORM {
+
     private EntityCache entityCache;
     private static CoffeeORM instance = null;
     private static DBConnection dbConnection = null;
+    private static ActiveRecord activeRecord = null;
 
     /**
      * Singleton Instance.
@@ -38,7 +41,14 @@ public class CoffeeORM {
     public CoffeeORM() {
         dbConnection = DBConnection.getInstance();
         entityCache = EntityCache.getInstance();
+        activeRecord = new ActiveRecord(dbConnection.getConnection());
     }
+
+    /**
+     *
+     * @return
+     */
+    public ActiveRecord activeRecord() {return activeRecord; }
 
     /**
      * Check if is a valid entity.
@@ -52,7 +62,7 @@ public class CoffeeORM {
         if (entityClass.getAnnotation(Entity.class) == null)
             throw new InvalidEntityException("Entity invalid.");
 
-        if (getFieldPrimary(entity) == null)
+        if (getPrimaryField(entity.getClass()) == null)
             throw new InvalidEntityException("The entity specified does not have Primary Key defined.");
     }
 
@@ -68,12 +78,12 @@ public class CoffeeORM {
     public void save(Object entity) throws OrmSaveException, InvalidEntityException {
         checkValidEntity(entity);
 
-        String tableName = getTableName(entity);
-        ArrayList<Field> fields = getFieldsAndValues(entity);
+        String tableName = getTableName(entity.getClass());
+        ArrayList<Field> fields = getFieldsAndValues(entity.getClass().toString());
 
         // Verified if is updating a record.
         boolean isUpdate = false;
-        String fieldPrimary = getFieldPrimary(entity);
+        String fieldPrimary = getPrimaryField(entity.getClass());
         for (Field field : fields) {
             if (field.name == fieldPrimary && !(field.value.equals(String.valueOf("0")) || field.value == "")) {
                 isUpdate = true;
@@ -129,30 +139,40 @@ public class CoffeeORM {
 
     }
 
-    private String getTableName(Object entity) {
-        return ((Entity) entity.getClass().getAnnotation(Entity.class)).TableName();
+    private String getTableName(java.lang.Class entity) {
+        return ((Entity) entity.getAnnotation(Entity.class)).TableName();
     }
 
     /**
      * Get fields mapped to the table.
      *
-     * @param entity
+     * @param className
      * @return
      */
-    private ArrayList<Field> getFieldsAndValues(Object entity) {
-        ArrayList<Field> fields = new ArrayList<>();
+    private ArrayList<Field> getFieldsAndValues(String className) {
+        ArrayList<Field> fields = entityCache.getOrmFields(className);
 
-        for (java.lang.reflect.Field field : entity.getClass().getFields()) {
+        ArrayList<java.lang.reflect.Field> reflectFieldsList = entityCache.getReflectFields(className);
+        java.lang.reflect.Field reflectFields[];
+
+        if(reflectFieldsList != null)
+            reflectFields = (java.lang.reflect.Field[]) reflectFieldsList.toArray();
+        else
+            reflectFields = className.getClass().getFields();
+
+        for (java.lang.reflect.Field field : reflectFields) {
             TableField tableField = (TableField) field.getAnnotation(TableField.class);
             if (tableField != null) {
                 try {
-                    fields.add(new Field(field.getName(), field.get(entity).toString(), tableField));
+                    fields.add(new Field(field.getName(), field.get(className).toString(), tableField));
+                } catch(NullPointerException e) {
+                    fields.add(new Field(field.getName(), "", tableField));
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
             }
         }
-        entityCache.setFields(entity, fields);
+
         return fields;
     }
 
@@ -178,9 +198,11 @@ public class CoffeeORM {
         }
     }
 
-    public void delete(Object entity) throws OrmDeleteException, InvalidEntityException {
-        checkValidEntity(entity);
+    public boolean delete(Object entity) throws OrmDeleteException, InvalidEntityException {
+//        checkValidEntity(entity);
 
+        // TODO: delete
+        return false;
     }
 
     /**
@@ -189,23 +211,28 @@ public class CoffeeORM {
      * @param entity
      * @return String
      */
-    private String getFieldPrimary(Object entity) {
-        String fieldFromCache = entityCache.getEntityPrimaryKey(entity);
+    private String getPrimaryField(java.lang.Class entity) {
+        String fieldFromCache = entityCache.getEntityPrimaryKey(entity.toString());
         if (fieldFromCache != null)
             return fieldFromCache;
-        for (java.lang.reflect.Field field : entity.getClass().getFields()) {
+        for (java.lang.reflect.Field field : entity.getFields()) {
             TableField tableField = (TableField) field.getAnnotation(TableField.class);
             if (tableField != null && tableField.Index() == TableField.Index.PRIMARY) {
-                entityCache.setEntityPrimaryKey(entity, field.getName());
+                entityCache.setEntityPrimaryKey(entity.toString(), field.getName());
                 return field.getName();
             }
         }
         return null;
     }
 
+    /**
+     * Set the primary key for a specified entity (object).
+     *
+     * @param entity
+     */
     private void setPrimaryKeyValue(Object entity) {
         for (java.lang.reflect.Field field : entity.getClass().getFields()) {
-            if (field.getName().equals(getFieldPrimary(entity))) {
+            if (field.getName().equals(getPrimaryField(entity.getClass()))) {
                 try {
                     field.set(entity, getLastInsertId());
                 } catch (IllegalAccessException e) {
@@ -216,50 +243,67 @@ public class CoffeeORM {
     }
 
     /**
-     * Get an entity object from database.
+     * Get first row by primary-key
+     *
+     * @param entity
+     * @param primaryKey
+     * @return
+     */
+    public Object getFirst(java.lang.Class entity, String primaryKey) {
+        return this.getFirstBy(entity, primaryKey, getPrimaryField(entity));
+    }
+    /**
+     * Get first row by primary-key
+     *
+     * @param entity
+     * @param primaryKey
+     * @return
+     */
+    public Object getFirst(java.lang.Class entity, int primaryKey) {
+        return getFirst(entity, String.valueOf(primaryKey));
+    }
+
+    /**
+     * Get first by fieldName.
      *
      * @param entity
      * @param value
      * @param fieldName
      * @return
      */
-    public Object getFirstBy(Object entity, String value, String fieldName) {
-        ArrayList<Field> fields = entityCache.getFields(entity);
-        if (fields == null) {
-            getFieldsAndValues(entity);
-            fields = entityCache.getFields(entity);
-        }
-        String SQL = String.format("SELECT * FROM `%s` WHERE `%s` = '%s'",
-                getTableName(entity),
-                getFieldPrimary(entity), value);
-        Class cEntity;
-        Object object = new Object();
-        try {
-            ResultSet resultSet = dbConnection.getStatement().executeQuery(SQL);
-            if (resultSet.next()) {
-                cEntity = Class.forName(entity.getClass().getCanonicalName());
-                object = cEntity.newInstance();
-                for (java.lang.reflect.Field field : entity.getClass().getFields()) {
-                    try {
-                        log(field.toString());
-                        if (field.getType().toString().equals("int")) {
-                            // int
-                            field.set(entity, resultSet.getInt(field.getName()));
-                        } else {
-                            // String
-                            field.set(entity, resultSet.getString(field.getName()));
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+    public Object getFirstBy(java.lang.Class entity, String value, String fieldName) {
+//        ArrayList<Field> fields = entityCache.getOrmFields(entity);
+//        if (fields == null) {
+//            getFieldsAndValues(entity);
+//            fields = entityCache.getOrmFields(entity);
+//        }
+        String sql = String.format("SELECT * FROM `%s` WHERE `%s` = '%s' LIMIT 1;", getTableName(entity), fieldName, Db.escape(value));
 
-            if (resultSet.next()) {
-                resultSet.getInt("id");
-                resultSet.close();
+        ArrayList<Object> rows = execute(sql, entity);
+        return rows.size() > 0 ? rows.get(0) : null;
+    }
+
+    /**
+     * Execute a query row and return the object initialized.
+     * @param sql
+     * @param entity
+     * @return Object
+     */
+    private ArrayList<Object> execute(String sql, java.lang.Class entity) {
+        ArrayList<Object> objects = new ArrayList<Object>();
+        try {
+            ResultSet resultSet = dbConnection.getStatement().executeQuery(sql);
+
+            while (resultSet.next()) {
+                Object rowObject = Class.forName(entity.getCanonicalName()).newInstance();
+                for (java.lang.reflect.Field field : rowObject.getClass().getFields()) {
+                    // Add fields to cache
+                    fillFieldByType(field, resultSet, rowObject, field.getType().toString());
+                }
+                objects.add(rowObject);
             }
-            return object;
+            resultSet.close();
+            return objects;
         } catch (SQLException e) {
             log(e.getMessage(), true);
         } catch (ClassNotFoundException e) {
@@ -272,7 +316,42 @@ public class CoffeeORM {
         return null;
     }
 
-    public Object getFirstBy(Object entity, String value) {
-        return this.getFirstBy(entity, value, getFieldPrimary(entity));
+    /**
+     * Fill object variables by her type.
+     *
+     * @param field
+     * @param resultSet
+     * @param entity
+     * @param dataType
+     * @throws SQLException
+     */
+    private void fillFieldByType(java.lang.reflect.Field field, ResultSet resultSet, Object entity, String dataType)
+            throws SQLException, IllegalAccessException {
+        // Fill fields types
+        switch (dataType) {
+            case "int":
+                field.set(entity, resultSet.getInt(field.getName()));
+                break;
+            case "float":
+                field.set(entity, resultSet.getFloat(field.getName()));
+                break;
+            case "double":
+                field.set(entity, resultSet.getDouble(field.getName()));
+                break;
+            case "class java.sql.Timestamp":
+                field.set(entity, resultSet.getTimestamp(field.getName()));
+                break;
+            case "class java.util.Date":
+            case "class java.sql.Date":
+                field.set(entity, resultSet.getDate(field.getName()));
+                break;
+            case "class java.sql.Time":
+                field.set(entity, resultSet.getTime(field.getName()));
+                break;
+            default:
+                // String
+                field.set(entity, resultSet.getString(field.getName()));
+        }
     }
+
 }

@@ -2,8 +2,6 @@ package com.coffeeorm.sql;
 
 import com.coffeeorm.util.Db;
 
-import static com.coffeeorm.util.Debug.log;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,17 +24,17 @@ public class QueryBuilder {
     protected Map<String, String> _like = new HashMap<String, String>();
     protected Map<String, String> _or_like = new HashMap<String, String>();
 
-    protected String // Active record
+    protected String // Active Record
             _db_prefix = "",
             _select = "*",
             _group_by = "",
             _order_by = "",
             _limit = "",
             // Database Configuration
-            _host = "localhost",
-            _port = "3306",
+            _host = "",
+            _port = "",
             _database = null,
-            _user = "root",
+            _user = "",
             _pass = "";
 
     protected String _table;
@@ -80,6 +78,7 @@ public class QueryBuilder {
             }
 
         }
+
 
         // WHERE
         if (_where_in.size() > 0) {
@@ -214,6 +213,13 @@ public class QueryBuilder {
             return false;
         }
 
+    }
+
+    private static void log(String str) {
+        com.coffeeorm.util.Debug.log("QueryBuilder :: " + str);
+    }
+    private static void log(String str, boolean error) {
+        com.coffeeorm.util.Debug.log("QueryBuilder :: " + str, error);
     }
 
 }

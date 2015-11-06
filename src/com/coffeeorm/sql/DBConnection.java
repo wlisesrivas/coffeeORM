@@ -85,7 +85,7 @@ public class DBConnection {
         return statement;
     }
 
-    public static Connection getConnection() {
+    public Connection getConnection() {
         return connection;
     }
 

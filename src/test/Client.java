@@ -3,6 +3,7 @@ package test;
 import com.coffeeorm.annotations.Entity;
 import com.coffeeorm.annotations.TableField;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 /**
@@ -29,7 +30,37 @@ public class Client {
     @TableField
     public String comment;
 
-//    @TableField
-    public Date updated_at;
-    public Date created_at;
+    @TableField
+    public String updated_at;
+
+    @TableField
+    public Timestamp created_at;
+
+    @TableField
+    public int is_deleted;
+
+    @TableField
+    public String payment_type;
+
+    @TableField
+    public String balance;
+
+    @TableField
+    public String last_bill_date;
+
+    @TableField
+    public String next_bill_date;
+
+    @TableField
+    public String identification;
+
+    @TableField
+    public String client_type;
+
+    @TableField
+    public String discount;
+
+    @TableField
+    public String discount_type;
+
 }

@@ -3,6 +3,7 @@ package com.coffeeorm.sql;
 import static com.coffeeorm.util.Debug.log;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -40,6 +41,17 @@ public class ActiveRecord extends QueryBuilder {
         log("Connection to database successfully");
     }
 
+    /**
+     *
+     * @param connection
+     */
+    public ActiveRecord(Connection connection) {
+        log("Loaded");
+        _connect(connection);
+        log("Connection to database successfully");
+    }
+
+
     // ------------------- Active Record Query -------------------
     // - SELECT
     public ActiveRecord select(String str) {
@@ -53,13 +65,13 @@ public class ActiveRecord extends QueryBuilder {
     }
 
     // - Join
-    public ActiveRecord join(String table, String clausure, String joinType) {
-        this._join.put(table + "|" + joinType, clausure);
+    public ActiveRecord join(String table, String closure, String joinType) {
+        this._join.put(table + "|" + joinType, closure);
         return this;
     }
 
-    public ActiveRecord join(String table, String clausure) {
-        return this.join(table, clausure, "inner");
+    public ActiveRecord join(String table, String closure) {
+        return this.join(table, closure, "inner");
     }
 
     // - WHERE
@@ -110,7 +122,7 @@ public class ActiveRecord extends QueryBuilder {
     }
 
     public ActiveRecord like(String column, String value) {
-        return this.like(column, value, "B");
+        return this.like(column, value, "");
     }
 
     // - OR LIKE
@@ -139,7 +151,7 @@ public class ActiveRecord extends QueryBuilder {
     }
 
     public ActiveRecord or_like(String column, String value) {
-        return this.or_like(column, value, "B");
+        return this.or_like(column, value, "");
     }
 
     // - LIMIT
@@ -232,7 +244,6 @@ public class ActiveRecord extends QueryBuilder {
         } catch (SQLException ex) {
             log(ex.getMessage(), true);
             log(SQL, true);
-            System.exit(0);
         }
         return null;
     }
@@ -270,7 +281,18 @@ public class ActiveRecord extends QueryBuilder {
                     + _host + ":" + _port + "/" + _database, _user, _pass);
             _statement = _db_connection.createStatement();
         } catch (SQLException ex) {
-            log("Couln't not connect to database", true);
+            log("Could not connect to database", true);
+            log(ex.getMessage(), true);
+            System.exit(0);
+        }
+    }
+
+    private void _connect(Connection connection) {
+        try {
+            _db_connection = connection;
+            _statement = _db_connection.createStatement();
+        } catch (SQLException ex) {
+            log("Could not connect to database", true);
             log(ex.getMessage(), true);
             System.exit(0);
         }
