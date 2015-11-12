@@ -40,10 +40,10 @@ public class Client {
     public int is_deleted;
 
     @TableField
-    public String payment_type;
+    public int payment_type;
 
     @TableField
-    public String balance;
+    public int balance;
 
     @TableField
     public String last_bill_date;

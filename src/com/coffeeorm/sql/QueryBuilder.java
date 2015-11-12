@@ -1,6 +1,6 @@
 package com.coffeeorm.sql;
 
-import com.coffeeorm.util.Db;
+import com.coffeeorm.util.UtilDB;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -175,7 +175,7 @@ public class QueryBuilder {
      * @return String
      */
     protected static String escape(String value) {
-        return Db.escape(value);
+        return UtilDB.escape(value);
     }
 
     /**

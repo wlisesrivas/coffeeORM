@@ -33,6 +33,7 @@ public class EntityCache {
         PrimaryKey = new HashMap<>();
         className = new HashMap<>();
         ormField = new HashMap<>();
+        reflectFields = new HashMap<>();
     }
 
     /**
@@ -98,7 +99,7 @@ public class EntityCache {
      * @return
      */
     public ArrayList<java.lang.reflect.Field> getReflectFields(String className) {
-        return reflectFields.get(className.getClass().toString());
+        return reflectFields.get(className);
     }
 
     /**
